@@ -31,12 +31,11 @@ pyinstaller --noconfirm automacro.spec || goto :error
 
 echo.
 echo ============================================================
-echo  Done!  Your app is the folder:
-echo      dist\AutoMacro\
+echo  Done!  Your app is the single file:
+echo      dist\AutoMacro.exe
 echo.
-echo  Move that whole folder somewhere permanent (e.g. Documents),
-echo  open it, then right-click AutoMacro.exe ->
-echo  "Pin to taskbar" or "Pin to Start". Launch it from there.
+echo  Move it somewhere permanent (e.g. Documents), double-click to
+echo  run, then right-click its taskbar icon -> "Pin to taskbar".
 echo.
 echo  Optional: to stop the SmartScreen "unknown publisher" warning
 echo  on this PC, run (as administrator):

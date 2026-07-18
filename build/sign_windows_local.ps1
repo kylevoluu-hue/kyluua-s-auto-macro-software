@@ -17,7 +17,7 @@
         -ExePath "C:\path\to\AutoMacro\AutoMacro.exe"
 #>
 param(
-    [string]$ExePath = "dist\AutoMacro\AutoMacro.exe"
+    [string]$ExePath = "dist\AutoMacro.exe"
 )
 
 if (-not (Test-Path $ExePath)) {

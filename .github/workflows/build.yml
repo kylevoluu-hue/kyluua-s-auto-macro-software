@@ -73,17 +73,15 @@ jobs:
           $tool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' |
                   Select-Object -Last 1
           & $tool.FullName sign /f $pfx /p $env:PFX_PW /fd SHA256 `
-            /tr http://timestamp.digicert.com /td SHA256 'dist\AutoMacro\AutoMacro.exe'
+            /tr http://timestamp.digicert.com /td SHA256 'dist\AutoMacro.exe'
           Remove-Item $pfx
 
-      # Windows ships as a one-folder app zipped up: unzip, then pin
-      # AutoMacro.exe (inside the folder) like any normal installed program.
+      # Windows ships as a single .exe you can download and pin directly.
       - name: Package (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path out | Out-Null
-          Compress-Archive -Path dist/AutoMacro -DestinationPath out/AutoMacro-Windows.zip -Force
+          mkdir -p out
+          mv "dist/AutoMacro.exe" "out/AutoMacro-Windows.exe"
 
       - name: Package (macOS)
         if: runner.os == 'macOS'
@@ -133,13 +131,13 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.2' }}
-          name: AutoMacro ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.2' }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.3' }}
+          name: AutoMacro ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.3' }}
           target_commitish: ${{ github.sha }}
           body: |
             **Download the file for your operating system, then pin it:**
 
-            - **Windows** — `AutoMacro-Windows.zip`. Unzip to a permanent folder (e.g. your Documents), open the `AutoMacro` folder, then right-click **`AutoMacro.exe` → Pin to taskbar / Pin to Start**. Run it from that pinned icon. (Windows now ships as a one-folder app so the pin stays stable between launches.)
+            - **Windows** — `AutoMacro-Windows.exe`. A single file. Move it somewhere permanent (e.g. your Documents), then double-click it, and once it's running right-click its taskbar icon → **Pin to taskbar**.
             - **macOS** — `AutoMacro-macOS.zip`. Unzip, drag `AutoMacro.app` into Applications, keep it in the Dock. First launch: right-click → *Open* (unsigned app), then grant **Accessibility** permission in System Settings → Privacy & Security → Accessibility.
             - **Linux** — `AutoMacro-Linux.tar.gz`. Extract, then run `./AutoMacro`. Install the included `.desktop` file to pin it to your app menu. For window targeting: `sudo apt install wmctrl xdotool`.
 

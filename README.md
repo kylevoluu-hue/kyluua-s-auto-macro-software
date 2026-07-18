@@ -73,21 +73,16 @@ normal application** — no Python required to run it afterwards.
 
 ### Windows
 Double-click **`build\build_windows.bat`** (or run it in a terminal).
-When it finishes you'll have a **one-folder app**:
+When it finishes you'll have a single file:
 
 ```
-dist\AutoMacro\AutoMacro.exe   (plus its support files)
+dist\AutoMacro.exe
 ```
 
-Move the whole `dist\AutoMacro\` folder somewhere permanent (e.g. your
-Documents), open it, then right-click **`AutoMacro.exe` → Pin to taskbar**
-or **Pin to Start**, and launch it from there.
-
-> **Why a folder and not a single .exe?** A one-folder app keeps a stable
-> `AutoMacro.exe` on disk, so the taskbar pin stays valid between launches
-> and Windows doesn't re-scan a fresh temp copy every time you open it — the
-> one-file form is what antivirus / SmartScreen tend to flag on each launch.
-> See **[Windows security prompts](#windows-security-prompts-smartscreen--smart-app-control)** below.
+Move it somewhere permanent (e.g. your Documents), double-click to run, then
+right-click its taskbar icon → **Pin to taskbar**. Because it isn't
+code-signed, Windows may warn or block it on first run — see
+**[Windows security prompts](#windows-security-prompts-smartscreen--smart-app-control)** below.
 
 ### macOS
 ```bash

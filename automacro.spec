@@ -79,80 +79,48 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-is_windows = sys.platform.startswith("win")
 is_mac = sys.platform == "darwin"
 
-if is_windows:
-    # Windows: build a one-FOLDER app (not one-file). A stable, on-disk
-    # ``AutoMacro.exe`` pins to the taskbar reliably and is always relaunched
-    # from the same path. One-file builds instead unpack themselves into a
-    # fresh %TEMP% folder on every launch, which SmartScreen / Smart App
-    # Control and antivirus repeatedly re-evaluate and often block — and that
-    # churn is also what can break a taskbar pin between launches.
-    exe = EXE(
-        pyz,
-        a.scripts,
-        [],
-        exclude_binaries=True,
-        name="AutoMacro",
-        debug=False,
-        bootloader_ignore_signals=False,
-        strip=False,
-        upx=True,
-        console=False,  # windowed app: no terminal window
-        disable_windowed_traceback=False,
-        icon=app_icon,
-    )
-    coll = COLLECT(
-        exe,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        strip=False,
-        upx=True,
-        upx_exclude=[],
-        name="AutoMacro",
-    )
-else:
-    # macOS / Linux: a single self-contained executable.
-    exe = EXE(
-        pyz,
-        a.scripts,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        [],
-        name="AutoMacro",
-        debug=False,
-        bootloader_ignore_signals=False,
-        strip=False,
-        upx=True,
-        upx_exclude=[],
-        runtime_tmpdir=None,
-        console=False,
-        disable_windowed_traceback=False,
-        argv_emulation=is_mac,  # macOS: accept file/URL open events
-        target_arch=None,
-        codesign_identity=None,
-        entitlements_file=None,
-        icon=app_icon,
-    )
+# A single self-contained executable on every platform: one file to download
+# and pin. (macOS additionally wraps it in a .app bundle below.)
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name="AutoMacro",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,  # windowed app: no terminal window
+    disable_windowed_traceback=False,
+    argv_emulation=is_mac,  # macOS: accept file/URL open events
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=app_icon,
+)
 
-    # macOS: wrap the executable in a proper .app bundle so it pins to the Dock.
-    if is_mac:
-        app = BUNDLE(
-            exe,
-            name="AutoMacro.app",
-            icon=app_icon,
-            bundle_identifier="com.kyluua.automacro",
-            info_plist={
-                "CFBundleName": "AutoMacro",
-                "CFBundleDisplayName": "AutoMacro",
-                "CFBundleShortVersionString": "1.0.2",
-                "NSHighResolutionCapable": True,
-                # Explains the accessibility prompt macOS shows on first use.
-                "NSAppleEventsUsageDescription": (
-                    "AutoMacro sends keystrokes to the application you choose."
-                ),
-            },
-        )
+# macOS: wrap the executable in a proper .app bundle so it pins to the Dock.
+if is_mac:
+    app = BUNDLE(
+        exe,
+        name="AutoMacro.app",
+        icon=app_icon,
+        bundle_identifier="com.kyluua.automacro",
+        info_plist={
+            "CFBundleName": "AutoMacro",
+            "CFBundleDisplayName": "AutoMacro",
+            "CFBundleShortVersionString": "1.0.3",
+            "NSHighResolutionCapable": True,
+            # Explains the accessibility prompt macOS shows on first use.
+            "NSAppleEventsUsageDescription": (
+                "AutoMacro sends keystrokes to the application you choose."
+            ),
+        },
+    )
