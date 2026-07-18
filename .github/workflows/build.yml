@@ -1,0 +1,116 @@
+name: Build & Release Apps
+
+# Builds AutoMacro into downloadable, pinnable apps on real Windows, macOS and
+# Linux machines. Pushing to the feature branch validates the builds; pushing a
+# version tag (e.g. v1.0.0) also publishes them to the Releases page.
+
+on:
+  push:
+    branches: ["claude/**"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk xvfb wmctrl xdotool
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      # Linux is headless in CI, and pynput must import (to pick its X11
+      # backend) while PyInstaller analyses it — so run the build under Xvfb.
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a pyinstaller --noconfirm --clean automacro.spec
+
+      - name: Build (Windows / macOS)
+        if: runner.os != 'Linux'
+        run: pyinstaller --noconfirm --clean automacro.spec
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir -p out
+          mv "dist/AutoMacro.exe" "out/AutoMacro-Windows.exe"
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p out
+          cd dist
+          # -y preserves the symlinks inside the .app bundle.
+          zip -r -y "../out/AutoMacro-macOS.zip" "AutoMacro.app"
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p out stage
+          cp dist/AutoMacro stage/AutoMacro
+          cp assets/icon.png stage/icon.png
+          cp build/AutoMacro.desktop stage/AutoMacro.desktop
+          chmod +x stage/AutoMacro
+          tar -czf out/AutoMacro-Linux.tar.gz -C stage .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoMacro-${{ runner.os }}
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    name: Publish downloads
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: AutoMacro ${{ github.ref_name }}
+          body: |
+            **Download the file for your operating system, then pin it:**
+
+            - **Windows** — `AutoMacro-Windows.exe`. Double-click to run; right-click → *Pin to taskbar* or *Pin to Start*. (Unsigned: on the SmartScreen prompt click *More info → Run anyway*.)
+            - **macOS** — `AutoMacro-macOS.zip`. Unzip, drag `AutoMacro.app` into Applications, keep it in the Dock. First launch: right-click → *Open* (unsigned app), then grant **Accessibility** permission in System Settings → Privacy & Security → Accessibility.
+            - **Linux** — `AutoMacro-Linux.tar.gz`. Extract, then run `./AutoMacro`. Install the included `.desktop` file to pin it to your app menu. For window targeting: `sudo apt install wmctrl xdotool`.
+
+            Note: iOS/Android are not supported — mobile operating systems forbid one app from sending input to other apps, which is this tool's core function.
+          files: artifacts/**/*
+          draft: false
+          prerelease: false
