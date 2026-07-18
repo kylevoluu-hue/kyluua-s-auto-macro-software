@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+.buildenv/
+env/
+
+# PyInstaller build output
+build/*/
+!build/build_windows.bat
+!build/build_macos.sh
+!build/build_linux.sh
+!build/AutoMacro.desktop
+dist/
+*.manifest
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp

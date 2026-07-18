@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=AutoMacro
+GenericName=Hotkey Macro Automation
+Comment=Send configurable sequences of hotkeys to any application
+# Edit these two paths to where you placed the files, then run:
+#   desktop-file-install --dir=$HOME/.local/share/applications build/AutoMacro.desktop
+# (or copy this file to ~/.local/share/applications/ and make it executable).
+Exec=/opt/AutoMacro/AutoMacro
+Icon=/opt/AutoMacro/icon.png
+Terminal=false
+Categories=Utility;
+Keywords=macro;hotkey;automation;keyboard;

@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "automacro"
+version = "1.0.0"
+description = "Configurable hotkey macro automation for any application."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "kyluua" }]
+keywords = ["macro", "hotkey", "automation", "keyboard", "autoclicker"]
+classifiers = [
+    "Environment :: X11 Applications",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: MacOS X",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "pynput>=1.7",
+    "customtkinter>=5.2",
+    "pillow>=9.0",
+    "platformdirs>=3.0",
+    "pygetwindow>=0.0.9; sys_platform == 'win32'",
+    "psutil>=5.9; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+build = ["pyinstaller>=6.0"]
+
+[project.scripts]
+automacro = "automacro.app:main"
+
+[project.gui-scripts]
+automacro-gui = "automacro.app:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+automacro = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
