@@ -1,0 +1,11 @@
+# Runtime dependencies for AutoMacro.
+# Install with:  pip install -r requirements.txt
+
+pynput>=1.7
+customtkinter>=5.2
+pillow>=9.0
+platformdirs>=3.0
+
+# Windows-only: open-window enumeration and process names for the target picker.
+pygetwindow>=0.0.9; sys_platform == "win32"
+psutil>=5.9; sys_platform == "win32"
