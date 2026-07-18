@@ -15,6 +15,7 @@ from ..engine import EngineListener, MacroEngine
 from ..hotkeys import create_hotkey_manager
 from ..keyspec import KeySpecError, is_valid_key, parse_hotkey
 from ..models import ActionType, AppConfig, Macro, MatchMode, Step
+from ..mousespec import is_valid_mouse
 from . import choices
 from .step_row import StepRow
 
@@ -646,6 +647,11 @@ class AppWindow(ctk.CTk):
             elif step.action is ActionType.KEY:
                 if not is_valid_key(step.value):
                     errors.append(f"Step {i}: '{step.value}' is not a valid key.")
+            elif step.action is ActionType.MOUSE:
+                if not is_valid_mouse(step.value):
+                    errors.append(
+                        f"Step {i}: '{step.value}' is not a valid mouse action."
+                    )
             elif step.action is ActionType.DELAY:
                 try:
                     if int(float(step.value)) < 0:

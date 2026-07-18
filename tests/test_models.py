@@ -33,9 +33,18 @@ def test_step_negative_values_clamped():
 def test_step_describe():
     assert "Wait" in Step(action=ActionType.DELAY, value="200").describe()
     assert Step(action=ActionType.KEY, value="enter", repeat=2).describe() == "Key enter x2"
+    assert Step(action=ActionType.MOUSE, value="left", repeat=3).describe() == "Mouse left x3"
     long_text = "x" * 100
     d = Step(action=ActionType.TEXT, value=long_text).describe()
     assert d.endswith('..."')
+
+
+def test_mouse_step_roundtrip():
+    step = Step(action=ActionType.MOUSE, value="scroll_up", repeat=5)
+    restored = Step.from_dict(step.to_dict())
+    assert restored.action is ActionType.MOUSE
+    assert restored.value == "scroll_up"
+    assert restored.repeat == 5
 
 
 def test_macro_roundtrip():

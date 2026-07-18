@@ -26,11 +26,16 @@ class PynputInputBackend:
 
     def __init__(self) -> None:
         from pynput.keyboard import Controller, Key, KeyCode
+        from pynput.mouse import Button
+        from pynput.mouse import Controller as MouseController
 
         self._Key = Key
         self._KeyCode = KeyCode
         self._controller = Controller()
         self._special = self._build_special_map(Key)
+
+        self._Button = Button
+        self._mouse = MouseController()
 
     @property
     def available(self) -> bool:
@@ -118,3 +123,25 @@ class PynputInputBackend:
 
     def type_text(self, text: str) -> None:
         self._controller.type(text)
+
+    def mouse(self, action: str) -> None:
+        Button = self._Button
+        m = self._mouse
+        if action == "left":
+            m.click(Button.left)
+        elif action == "right":
+            m.click(Button.right)
+        elif action == "middle":
+            m.click(Button.middle)
+        elif action == "double":
+            m.click(Button.left, 2)
+        elif action == "left_down":
+            m.press(Button.left)
+        elif action == "left_up":
+            m.release(Button.left)
+        elif action == "scroll_up":
+            m.scroll(0, 1)
+        elif action == "scroll_down":
+            m.scroll(0, -1)
+        else:  # pragma: no cover - engine normalises before calling
+            raise ValueError(f"Unsupported mouse action: {action!r}")

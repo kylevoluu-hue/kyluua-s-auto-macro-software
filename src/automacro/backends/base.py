@@ -42,6 +42,14 @@ class InputBackend(Protocol):
     def type_text(self, text: str) -> None:
         """Type a literal string as individual key presses."""
 
+    def mouse(self, action: str) -> None:
+        """Perform a canonical mouse action at the current cursor position.
+
+        Actions: ``left``/``right``/``middle`` (click), ``double`` (double
+        left click), ``left_down``/``left_up`` (press/release), and
+        ``scroll_up``/``scroll_down`` (one notch).
+        """
+
     @property
     def available(self) -> bool:
         """Whether real input can actually be sent."""
@@ -90,6 +98,9 @@ class NullInputBackend:
         self._fail()
 
     def type_text(self, text: str) -> None:
+        self._fail()
+
+    def mouse(self, action: str) -> None:
         self._fail()
 
 

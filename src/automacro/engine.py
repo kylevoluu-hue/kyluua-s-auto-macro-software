@@ -22,6 +22,7 @@ from typing import Callable
 from .backends.base import InputBackend, WindowBackend, WindowInfo
 from .keyspec import KeySpecError, parse_hotkey
 from .models import ActionType, Macro, MatchMode, Step
+from .mousespec import MouseSpecError, normalize_mouse
 
 __all__ = ["EngineListener", "MacroEngine", "window_matches"]
 
@@ -204,6 +205,14 @@ class MacroEngine:
                 self._input.hotkey(keys)
             return
 
+        if step.action is ActionType.MOUSE:
+            action = normalize_mouse(step.value)  # may raise MouseSpecError
+            for _ in range(max(1, step.repeat)):
+                if self._stop_event.is_set():
+                    return
+                self._input.mouse(action)
+            return
+
         # ActionType.KEY
         self._input.tap(step.value, presses=max(1, step.repeat))
 
@@ -275,6 +284,8 @@ class MacroEngine:
 
         except KeySpecError as exc:
             listener.error(f"Invalid key in macro: {exc}")
+        except MouseSpecError as exc:
+            listener.error(f"Invalid mouse action in macro: {exc}")
         except Exception as exc:  # pragma: no cover - defensive catch-all
             listener.error(f"Macro run failed: {exc}")
         finally:

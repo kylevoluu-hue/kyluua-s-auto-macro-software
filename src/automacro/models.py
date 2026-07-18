@@ -48,6 +48,7 @@ class ActionType(str, Enum):
     KEY = "key"  # tap a single key, ``value`` is a key name e.g. "enter"
     HOTKEY = "hotkey"  # a combo, ``value`` is e.g. "ctrl+shift+a"
     TEXT = "text"  # type a literal string, ``value`` is the text
+    MOUSE = "mouse"  # mouse action, ``value`` is e.g. "left" or "scroll_up"
     DELAY = "delay"  # wait, ``value`` is a number of milliseconds
 
     @classmethod
@@ -108,6 +109,8 @@ class Step:
             return f'Type "{preview}"{rep}'
         if self.action is ActionType.HOTKEY:
             return f"Hotkey {self.value}{rep}"
+        if self.action is ActionType.MOUSE:
+            return f"Mouse {self.value}{rep}"
         return f"Key {self.value}{rep}"
 
     def to_dict(self) -> dict[str, Any]:

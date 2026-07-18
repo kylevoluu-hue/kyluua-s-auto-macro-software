@@ -165,6 +165,9 @@ Without the secrets, the signing step is skipped and the build is unsigned.
    - **Key tap** — one key, e.g. `enter`, `f5`, `space`, `a`
    - **Hotkey** — a combo, e.g. `ctrl+c`, `ctrl+shift+esc`, `alt+f4`
    - **Type text** — types the text you enter
+   - **Mouse** — a mouse action at the current cursor position: `left`,
+     `right`, `middle`, `double` (double-click), `scroll_up`, `scroll_down`,
+     or `left_down` / `left_up` (press-and-hold, then release)
    - **Wait** — pauses for the given milliseconds
    - plus a per-step **delay** (ms) and a **repeat** count.
    Reorder with ▲▼, remove with ✕, and un-tick a step to disable it.

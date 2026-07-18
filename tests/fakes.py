@@ -24,6 +24,9 @@ class FakeInput:
     def type_text(self, text: str) -> None:
         self.calls.append(("text", text))
 
+    def mouse(self, action: str) -> None:
+        self.calls.append(("mouse", action))
+
 
 class FakeWindows:
     """A controllable window backend for focus/activation tests."""

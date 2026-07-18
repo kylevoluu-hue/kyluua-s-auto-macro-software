@@ -17,7 +17,7 @@ from __future__ import annotations
 
 __all__ = ["__version__", "APP_NAME", "APP_ID"]
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 #: Human facing product name.
 APP_NAME = "AutoMacro"

@@ -14,6 +14,7 @@ ACTION_LABELS: dict[ActionType, str] = {
     ActionType.KEY: "Key tap",
     ActionType.HOTKEY: "Hotkey",
     ActionType.TEXT: "Type text",
+    ActionType.MOUSE: "Mouse",
     ActionType.DELAY: "Wait",
 }
 LABEL_TO_ACTION: dict[str, ActionType] = {v: k for k, v in ACTION_LABELS.items()}
@@ -26,6 +27,8 @@ def value_choices_for(action: ActionType) -> list[str]:
         return choices.KEY_CHOICES
     if action is ActionType.HOTKEY:
         return choices.COMBO_CHOICES
+    if action is ActionType.MOUSE:
+        return choices.MOUSE_CHOICES
     if action is ActionType.DELAY:
         return choices.DELAY_CHOICES
     return []  # TEXT: free-form, no preset list

@@ -60,6 +60,18 @@ COMBO_CHOICES: list[str] = [
     "cmd+tab",
 ]
 
+# Mouse actions for "Mouse" steps (performed at the current cursor position).
+MOUSE_CHOICES: list[str] = [
+    "left",
+    "right",
+    "middle",
+    "double",
+    "scroll_up",
+    "scroll_down",
+    "left_down",
+    "left_up",
+]
+
 # A few handy presets for "Wait" steps (milliseconds).
 DELAY_CHOICES: list[str] = ["50", "100", "250", "500", "1000", "2000", "5000"]
 

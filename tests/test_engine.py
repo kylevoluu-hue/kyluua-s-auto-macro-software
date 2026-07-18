@@ -126,6 +126,48 @@ def test_repeat_counts():
     ]
 
 
+def test_mouse_actions_execute_with_repeat_and_aliases():
+    inp = FakeInput()
+    rec = Recorder()
+    macro = Macro(
+        steps=[
+            Step(action=ActionType.MOUSE, value="left", delay_after_ms=0),
+            Step(action=ActionType.MOUSE, value="Right Click", delay_after_ms=0),
+            Step(action=ActionType.MOUSE, value="scroll_up", repeat=3, delay_after_ms=0),
+            Step(action=ActionType.MOUSE, value="double", delay_after_ms=0),
+        ],
+        start_delay_ms=0,
+        loops=1,
+    )
+    engine = MacroEngine(inp, listener=rec)
+    run_to_completion(engine, macro, rec)
+
+    assert inp.calls == [
+        ("mouse", "left"),
+        ("mouse", "right"),  # alias normalised
+        ("mouse", "scroll_up"),
+        ("mouse", "scroll_up"),
+        ("mouse", "scroll_up"),
+        ("mouse", "double"),
+    ]
+    assert rec.errors == []
+
+
+def test_invalid_mouse_action_reports_error():
+    inp = FakeInput()
+    rec = Recorder()
+    macro = Macro(
+        steps=[Step(action=ActionType.MOUSE, value="wiggle", delay_after_ms=0)],
+        start_delay_ms=0,
+        loops=1,
+    )
+    engine = MacroEngine(inp, listener=rec)
+    run_to_completion(engine, macro, rec)
+    assert rec.errors
+    assert "mouse" in rec.errors[0].lower()
+    assert rec.states[-1] is False
+
+
 def test_disabled_steps_are_skipped():
     inp = FakeInput()
     rec = Recorder()

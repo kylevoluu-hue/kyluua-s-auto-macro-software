@@ -116,7 +116,7 @@ if is_mac:
         info_plist={
             "CFBundleName": "AutoMacro",
             "CFBundleDisplayName": "AutoMacro",
-            "CFBundleShortVersionString": "1.0.3",
+            "CFBundleShortVersionString": "1.0.4",
             "NSHighResolutionCapable": True,
             # Explains the accessibility prompt macOS shows on first use.
             "NSAppleEventsUsageDescription": (
