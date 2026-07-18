@@ -64,7 +64,8 @@ COMBO_CHOICES: list[str] = [
 DELAY_CHOICES: list[str] = ["50", "100", "250", "500", "1000", "2000", "5000"]
 
 # Good global start/stop and emergency-stop keys (easy to reach, rarely
-# clash with the target app). Function keys first.
+# clash with the target app). Function keys first, then modifier combos for
+# when a plain F-key is already used by the target app.
 TRIGGER_CHOICES: list[str] = (
     [f"f{i}" for i in (6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 11, 12)]
     + [
@@ -77,7 +78,10 @@ TRIGGER_CHOICES: list[str] = (
         "page_up",
         "page_down",
     ]
-    + ["ctrl+shift+s", "alt+shift+s", "ctrl+shift+x"]
+    + [f"ctrl+{k}" for k in ("f6", "f7", "f8", "f9", "f10")]
+    + [f"alt+{k}" for k in ("f6", "f7", "f8", "f9", "f10")]
+    + [f"shift+{k}" for k in ("f6", "f7", "f8")]
+    + ["ctrl+shift+s", "alt+shift+s", "ctrl+shift+x", "ctrl+shift+q"]
 )
 
 

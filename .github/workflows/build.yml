@@ -25,6 +25,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
+    # Enables the optional Windows code-signing step below — only when a
+    # certificate secret has been added to the repo. Signing is what lets a
+    # Windows build clear Smart App Control on machines that enforce it.
+    env:
+      SIGN_WINDOWS: ${{ secrets.WIN_CERT_PFX_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -53,11 +58,32 @@ jobs:
         if: runner.os != 'Linux'
         run: pyinstaller --noconfirm --clean automacro.spec
 
+      # Optional: sign the exe if a code-signing certificate has been provided
+      # as repo secrets (WIN_CERT_PFX_BASE64 = base64 of your .pfx,
+      # WIN_CERT_PASSWORD = its password). Skipped entirely when absent.
+      - name: Sign Windows executable (optional)
+        if: runner.os == 'Windows' && env.SIGN_WINDOWS == 'true'
+        shell: pwsh
+        env:
+          PFX_B64: ${{ secrets.WIN_CERT_PFX_BASE64 }}
+          PFX_PW: ${{ secrets.WIN_CERT_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'code.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:PFX_B64))
+          $tool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' |
+                  Select-Object -Last 1
+          & $tool.FullName sign /f $pfx /p $env:PFX_PW /fd SHA256 `
+            /tr http://timestamp.digicert.com /td SHA256 'dist\AutoMacro\AutoMacro.exe'
+          Remove-Item $pfx
+
+      # Windows ships as a one-folder app zipped up: unzip, then pin
+      # AutoMacro.exe (inside the folder) like any normal installed program.
       - name: Package (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          mkdir -p out
-          mv "dist/AutoMacro.exe" "out/AutoMacro-Windows.exe"
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Compress-Archive -Path dist/AutoMacro -DestinationPath out/AutoMacro-Windows.zip -Force
 
       - name: Package (macOS)
         if: runner.os == 'macOS'
@@ -107,15 +133,19 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.1' }}
-          name: AutoMacro ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.1' }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.2' }}
+          name: AutoMacro ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.2' }}
           target_commitish: ${{ github.sha }}
           body: |
             **Download the file for your operating system, then pin it:**
 
-            - **Windows** — `AutoMacro-Windows.exe`. Double-click to run; right-click → *Pin to taskbar* or *Pin to Start*. (Unsigned: on the SmartScreen prompt click *More info → Run anyway*.)
+            - **Windows** — `AutoMacro-Windows.zip`. Unzip to a permanent folder (e.g. your Documents), open the `AutoMacro` folder, then right-click **`AutoMacro.exe` → Pin to taskbar / Pin to Start**. Run it from that pinned icon. (Windows now ships as a one-folder app so the pin stays stable between launches.)
             - **macOS** — `AutoMacro-macOS.zip`. Unzip, drag `AutoMacro.app` into Applications, keep it in the Dock. First launch: right-click → *Open* (unsigned app), then grant **Accessibility** permission in System Settings → Privacy & Security → Accessibility.
             - **Linux** — `AutoMacro-Linux.tar.gz`. Extract, then run `./AutoMacro`. Install the included `.desktop` file to pin it to your app menu. For window targeting: `sudo apt install wmctrl xdotool`.
+
+            **Windows security prompts:** the app isn't code-signed, so Windows may warn on first run.
+            - *SmartScreen* ("Windows protected your PC") → **More info → Run anyway**.
+            - *Smart App Control* (stricter, silently blocks) only allows signed/known apps — there's no "run anyway". If you have it on and it blocks the app, either turn Smart App Control off (Windows Security → App & browser control → Smart App Control), or sign the build with your own certificate (see the repo's README → "Windows code signing").
 
             Note: iOS/Android are not supported — mobile operating systems forbid one app from sending input to other apps, which is this tool's core function.
           files: artifacts/**/*

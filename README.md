@@ -73,14 +73,21 @@ normal application** — no Python required to run it afterwards.
 
 ### Windows
 Double-click **`build\build_windows.bat`** (or run it in a terminal).
-When it finishes you'll have:
+When it finishes you'll have a **one-folder app**:
 
 ```
-dist\AutoMacro.exe
+dist\AutoMacro\AutoMacro.exe   (plus its support files)
 ```
 
-Right-click it → **Pin to taskbar** or **Pin to Start**. Done — it's now an
-app you can launch with one click.
+Move the whole `dist\AutoMacro\` folder somewhere permanent (e.g. your
+Documents), open it, then right-click **`AutoMacro.exe` → Pin to taskbar**
+or **Pin to Start**, and launch it from there.
+
+> **Why a folder and not a single .exe?** A one-folder app keeps a stable
+> `AutoMacro.exe` on disk, so the taskbar pin stays valid between launches
+> and Windows doesn't re-scan a fresh temp copy every time you open it — the
+> one-file form is what antivirus / SmartScreen tend to flag on each launch.
+> See **[Windows security prompts](#windows-security-prompts-smartscreen--smart-app-control)** below.
 
 ### macOS
 ```bash
@@ -105,6 +112,47 @@ sudo cp assets/icon.png /opt/AutoMacro/icon.png
 cp build/AutoMacro.desktop ~/.local/share/applications/AutoMacro.desktop
 # edit the Exec= / Icon= paths in that file to match, then it appears in your menu
 ```
+
+---
+
+## Windows security prompts (SmartScreen / Smart App Control)
+
+The app isn't signed with a commercial code-signing certificate, so Windows
+may warn about it. There are **two different** Windows features to know about:
+
+| Feature | What you see | How to proceed |
+|--------|--------------|----------------|
+| **SmartScreen** | "Windows protected your PC" dialog | Click **More info → Run anyway**. One time. |
+| **Smart App Control (SAC)** | App is blocked with *no* "run anyway" | SAC only allows signed/known apps — see below. |
+
+**Smart App Control** is stricter and can't be bypassed per-app. If it's on
+and blocking AutoMacro, you have three options:
+
+1. **Turn Smart App Control off** — Windows Security → *App & browser control*
+   → *Smart App Control settings* → **Off**. (Note: once off it can't be
+   turned back on without reinstalling Windows.)
+2. **Sign it yourself for your own PC** — run, as administrator:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File build\sign_windows_local.ps1 -ExePath "C:\path\to\AutoMacro\AutoMacro.exe"
+   ```
+   This clears the SmartScreen warning on your machine. (It does **not**
+   satisfy SAC, which only trusts Microsoft-known certificates.)
+3. **Sign with a real certificate** — see below. This is the only way to
+   clear SAC everywhere.
+
+### Windows code signing (for distribution)
+
+The build workflow (`.github/workflows/build.yml`) will automatically sign the
+Windows `.exe` **if** you add two repository secrets:
+
+- `WIN_CERT_PFX_BASE64` — your code-signing certificate (`.pfx`) as base64
+  (`certutil -encode cert.pfx cert.txt`, or `[Convert]::ToBase64String(...)`).
+- `WIN_CERT_PASSWORD` — the certificate's password.
+
+With those present, CI signs `AutoMacro.exe` before packaging. A certificate
+from a trusted CA (an **EV** certificate gives immediate SmartScreen/SAC
+reputation) is what lets the download run cleanly on other people's machines.
+Without the secrets, the signing step is skipped and the build is unsigned.
 
 ---
 
