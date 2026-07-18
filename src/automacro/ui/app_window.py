@@ -15,6 +15,7 @@ from ..engine import EngineListener, MacroEngine
 from ..hotkeys import create_hotkey_manager
 from ..keyspec import KeySpecError, is_valid_key, parse_hotkey
 from ..models import ActionType, AppConfig, Macro, MatchMode, Step
+from . import choices
 from .step_row import StepRow
 
 # Label <-> enum maps for the match-mode dropdown.
@@ -144,35 +145,37 @@ class AppWindow(ctk.CTk):
         self.theme_menu.grid(row=0, column=2, padx=(0, 16), pady=12)
 
     def _build_sidebar(self) -> None:
-        sidebar = ctk.CTkFrame(self, width=220, corner_radius=0)
+        sidebar = ctk.CTkFrame(self, width=240, corner_radius=0)
         sidebar.grid(row=1, column=0, sticky="nsw")
         sidebar.grid_rowconfigure(1, weight=1)
+        # Constrain children to the sidebar's width so the button bar cannot
+        # overflow and slide under the editor (the previous overlap bug).
+        sidebar.grid_columnconfigure(0, weight=1)
         sidebar.grid_propagate(False)
 
         ctk.CTkLabel(sidebar, text="Macros", font=self.section_font).grid(
             row=0, column=0, sticky="w", padx=14, pady=(14, 6)
         )
-        self.macro_list = ctk.CTkScrollableFrame(sidebar, width=196)
+        self.macro_list = ctk.CTkScrollableFrame(sidebar)
         self.macro_list.grid(row=1, column=0, sticky="nsew", padx=8)
         self.macro_list.grid_columnconfigure(0, weight=1)
 
         btn_bar = ctk.CTkFrame(sidebar, fg_color="transparent")
         btn_bar.grid(row=2, column=0, sticky="ew", padx=8, pady=10)
-        btn_bar.grid_columnconfigure((0, 1, 2), weight=1)
-        ctk.CTkButton(btn_bar, text="＋ New", command=self._new_macro).grid(
-            row=0, column=0, padx=2, sticky="ew"
-        )
-        ctk.CTkButton(btn_bar, text="⧉ Copy", command=self._duplicate_macro).grid(
-            row=0, column=1, padx=2, sticky="ew"
-        )
+        btn_bar.grid_columnconfigure((0, 1), weight=1)
+        ctk.CTkButton(
+            btn_bar, text="＋ New", width=96, command=self._new_macro
+        ).grid(row=0, column=0, padx=(0, 3), pady=(0, 6), sticky="ew")
+        ctk.CTkButton(
+            btn_bar, text="⧉ Duplicate", width=96, command=self._duplicate_macro
+        ).grid(row=0, column=1, padx=(3, 0), pady=(0, 6), sticky="ew")
         ctk.CTkButton(
             btn_bar,
-            text="🗑",
-            width=36,
+            text="🗑  Delete macro",
             fg_color="#a83232",
             hover_color="#c0392b",
             command=self._delete_macro,
-        ).grid(row=0, column=2, padx=2, sticky="ew")
+        ).grid(row=1, column=0, columnspan=2, sticky="ew")
 
     def _build_editor(self) -> None:
         editor = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
@@ -304,23 +307,32 @@ class AppWindow(ctk.CTk):
             command=self._on_jitter_change,
         ).grid(row=1, column=0, sticky="ew")
 
-        # Trigger + panic hotkeys.
+        # Trigger + panic hotkeys — pick from a list, no typing required.
         trig = ctk.CTkFrame(panel, fg_color="transparent")
         trig.grid(row=2, column=0, columnspan=4, sticky="ew", padx=8, pady=(2, 10))
         trig.grid_columnconfigure((1, 3), weight=1)
+
         ctk.CTkLabel(trig, text="Start/stop hotkey").grid(row=0, column=0, padx=(4, 6))
-        self.trigger_var = ctk.StringVar()
-        te = ctk.CTkEntry(trig, textvariable=self.trigger_var, placeholder_text="f6")
-        te.grid(row=0, column=1, sticky="ew", padx=(0, 14))
-        te.bind("<FocusOut>", lambda _e: self._apply_hotkeys())
-        te.bind("<Return>", lambda _e: self._apply_hotkeys())
+        self.trigger_var = ctk.StringVar(value="f6")
+        self.trigger_menu = ctk.CTkOptionMenu(
+            trig,
+            variable=self.trigger_var,
+            values=choices.TRIGGER_CHOICES,
+            command=lambda _v: self._apply_hotkeys(),
+        )
+        self.trigger_menu.grid(row=0, column=1, sticky="ew", padx=(0, 14))
 
         ctk.CTkLabel(trig, text="Emergency stop").grid(row=0, column=2, padx=(4, 6))
         self.panic_var = ctk.StringVar(value=self.config_model.panic_hotkey)
-        pe = ctk.CTkEntry(trig, textvariable=self.panic_var, placeholder_text="esc")
-        pe.grid(row=0, column=3, sticky="ew")
-        pe.bind("<FocusOut>", lambda _e: self._apply_hotkeys())
-        pe.bind("<Return>", lambda _e: self._apply_hotkeys())
+        self.panic_menu = ctk.CTkOptionMenu(
+            trig,
+            variable=self.panic_var,
+            values=choices.with_current(
+                self.config_model.panic_hotkey, choices.TRIGGER_CHOICES
+            ),
+            command=lambda _v: self._apply_hotkeys(),
+        )
+        self.panic_menu.grid(row=0, column=3, sticky="ew")
 
     def _labeled_entry(self, parent, label, var, row, col) -> None:
         box = ctk.CTkFrame(parent, fg_color="transparent")
@@ -343,12 +355,24 @@ class AppWindow(ctk.CTk):
         self.run_button = ctk.CTkButton(
             footer,
             text="▶  Start",
-            width=180,
+            width=150,
             height=40,
             font=self.section_font,
-            command=self._on_toggle,
+            command=self._on_start,
         )
-        self.run_button.grid(row=0, column=1, padx=16, pady=10)
+        self.run_button.grid(row=0, column=1, padx=(8, 6), pady=10)
+        self.stop_button = ctk.CTkButton(
+            footer,
+            text="■  Stop",
+            width=130,
+            height=40,
+            font=self.section_font,
+            fg_color="#a83232",
+            hover_color="#c0392b",
+            command=self._on_stop,
+            state="disabled",
+        )
+        self.stop_button.grid(row=0, column=2, padx=(6, 16), pady=10)
 
     # -- macro list / selection -------------------------------------------
 
@@ -440,6 +464,9 @@ class AppWindow(ctk.CTk):
         self.loops_var.set(str(m.loops))
         self.jitter_var.set(m.jitter_pct)
         self._on_jitter_change(m.jitter_pct)
+        self.trigger_menu.configure(
+            values=choices.with_current(m.trigger_hotkey, choices.TRIGGER_CHOICES)
+        )
         self.trigger_var.set(m.trigger_hotkey)
         self._rebuild_steps(m.steps)
 
@@ -627,9 +654,8 @@ class AppWindow(ctk.CTk):
                     errors.append(f"Step {i}: wait needs a number of milliseconds.")
         return errors
 
-    def _on_toggle(self) -> None:
+    def _on_start(self) -> None:
         if self._running:
-            self.engine.stop()
             return
         if not self.input_backend.available:
             messagebox.showerror(
@@ -652,13 +678,22 @@ class AppWindow(ctk.CTk):
         if self.engine.start(macro):
             self._set_running_ui(True)
 
+    def _on_stop(self) -> None:
+        if self.engine.is_running:
+            self.engine.stop()
+
+    def _on_toggle(self) -> None:
+        """Start if idle, stop if running — used by the global hotkey."""
+
+        if self._running:
+            self._on_stop()
+        else:
+            self._on_start()
+
     def _set_running_ui(self, running: bool) -> None:
         self._running = running
-        if running:
-            self.run_button.configure(text="■  Stop", fg_color="#c0392b", hover_color="#a83232")
-        else:
-            self.run_button.configure(text="▶  Start", fg_color=["#3a7ebf", "#1f538d"],
-                                      hover_color=["#325882", "#14375e"])
+        self.run_button.configure(state="disabled" if running else "normal")
+        self.stop_button.configure(state="normal" if running else "disabled")
 
     # -- engine callbacks (main thread) -----------------------------------
 

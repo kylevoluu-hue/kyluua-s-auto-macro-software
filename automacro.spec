@@ -112,7 +112,7 @@ if sys.platform == "darwin":
         info_plist={
             "CFBundleName": "AutoMacro",
             "CFBundleDisplayName": "AutoMacro",
-            "CFBundleShortVersionString": "1.0.0",
+            "CFBundleShortVersionString": "1.0.1",
             "NSHighResolutionCapable": True,
             # Explains the accessibility prompt macOS shows on first use.
             "NSAppleEventsUsageDescription": (

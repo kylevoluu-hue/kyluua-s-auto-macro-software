@@ -7,6 +7,7 @@ from typing import Callable
 import customtkinter as ctk
 
 from ..models import ActionType, Step
+from . import choices
 
 # Display labels for the action dropdown, and the reverse mapping.
 ACTION_LABELS: dict[ActionType, str] = {
@@ -17,13 +18,17 @@ ACTION_LABELS: dict[ActionType, str] = {
 }
 LABEL_TO_ACTION: dict[str, ActionType] = {v: k for k, v in ACTION_LABELS.items()}
 
-# Placeholder / hint text per action to guide the user.
-VALUE_HINTS: dict[ActionType, str] = {
-    ActionType.KEY: "e.g. enter, f5, a",
-    ActionType.HOTKEY: "e.g. ctrl+shift+esc",
-    ActionType.TEXT: "text to type",
-    ActionType.DELAY: "milliseconds",
-}
+
+def value_choices_for(action: ActionType) -> list[str]:
+    """The dropdown options offered for a step's value, by action type."""
+
+    if action is ActionType.KEY:
+        return choices.KEY_CHOICES
+    if action is ActionType.HOTKEY:
+        return choices.COMBO_CHOICES
+    if action is ActionType.DELAY:
+        return choices.DELAY_CHOICES
+    return []  # TEXT: free-form, no preset list
 
 
 class StepRow(ctk.CTkFrame):
@@ -49,7 +54,7 @@ class StepRow(ctk.CTkFrame):
         self._on_delete = on_delete
         self._on_move = on_move
 
-        self.grid_columnconfigure(2, weight=1)  # value entry stretches
+        self.grid_columnconfigure(2, weight=1)  # value widget stretches
 
         self.enabled_var = ctk.BooleanVar(value=step.enabled)
         self.action_var = ctk.StringVar(value=ACTION_LABELS[step.action])
@@ -66,33 +71,33 @@ class StepRow(ctk.CTkFrame):
         # Action type.
         self.action_menu = ctk.CTkOptionMenu(
             self,
-            width=110,
+            width=104,
             values=list(ACTION_LABELS.values()),
             variable=self.action_var,
             command=self._on_action_change,
         )
         self.action_menu.grid(row=0, column=1, padx=4, pady=6)
 
-        # Value (key name / combo / text / ms).
-        self.value_entry = ctk.CTkEntry(
+        # Value — a selectable dropdown you can also type into (key name /
+        # combo / preset delay), or a free text field for "Type text".
+        self.value_combo = ctk.CTkComboBox(
             self,
-            textvariable=self.value_var,
-            placeholder_text=VALUE_HINTS[step.action],
+            values=value_choices_for(step.action),
+            variable=self.value_var,
+            command=lambda _v: self._changed(),
         )
-        self.value_entry.grid(row=0, column=2, padx=4, pady=6, sticky="ew")
+        self.value_combo.grid(row=0, column=2, padx=4, pady=6, sticky="ew")
         self.value_var.trace_add("write", lambda *_: self._changed())
 
         # Delay after (ms).
-        self.delay_label = ctk.CTkLabel(self, text="delay")
-        self.delay_label.grid(row=0, column=3, padx=(8, 0))
-        self.delay_entry = ctk.CTkEntry(self, width=64, textvariable=self.delay_var)
+        ctk.CTkLabel(self, text="delay").grid(row=0, column=3, padx=(8, 0))
+        self.delay_entry = ctk.CTkEntry(self, width=60, textvariable=self.delay_var)
         self.delay_entry.grid(row=0, column=4, padx=4, pady=6)
         self.delay_var.trace_add("write", lambda *_: self._changed())
 
         # Repeat count.
-        self.repeat_label = ctk.CTkLabel(self, text="x")
-        self.repeat_label.grid(row=0, column=5, padx=(8, 0))
-        self.repeat_entry = ctk.CTkEntry(self, width=48, textvariable=self.repeat_var)
+        ctk.CTkLabel(self, text="×").grid(row=0, column=5, padx=(8, 0))
+        self.repeat_entry = ctk.CTkEntry(self, width=44, textvariable=self.repeat_var)
         self.repeat_entry.grid(row=0, column=6, padx=4, pady=6)
         self.repeat_var.trace_add("write", lambda *_: self._changed())
 
@@ -124,7 +129,7 @@ class StepRow(ctk.CTkFrame):
 
     def _on_action_change(self, label: str) -> None:
         action = LABEL_TO_ACTION.get(label, ActionType.KEY)
-        self.value_entry.configure(placeholder_text=VALUE_HINTS[action])
+        self.value_combo.configure(values=value_choices_for(action))
         self._sync_repeat_state(action)
         self._changed()
 
